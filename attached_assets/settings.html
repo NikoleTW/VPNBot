@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Настройки</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Настройки Telegram бота</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_settings') }}" method="post">
+                    <div class="mb-3">
+                        <label for="setting_telegram_bot_token" class="form-label">Токен Telegram бота</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="setting_telegram_bot_token" name="setting_telegram_bot_token" value="{{ settings.get('telegram_bot_token', '') }}" placeholder="Токен от @BotFather">
+                            <button class="btn btn-outline-secondary" type="button" onclick="testBotToken()">Проверить</button>
+                        </div>
+                        <div class="form-text">Токен можно получить у @BotFather в Telegram</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="setting_telegram_admin_ids" class="form-label">ID администраторов (через запятую)</label>
+                        <input type="text" class="form-control" id="setting_telegram_admin_ids" name="setting_telegram_admin_ids" value="{{ settings.get('telegram_admin_ids', '') }}" placeholder="12345678,87654321">
+                        <div class="form-text">Список Telegram ID администраторов, которые имеют доступ к управлению через бота</div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Сообщения бота</h5>
+                    
+                    <div class="mb-3">
+                        <label for="setting_welcome_message" class="form-label">Приветственное сообщение</label>
+                        <textarea class="form-control" id="setting_welcome_message" name="setting_welcome_message" rows="3">{{ settings.get('welcome_message', 'Добро пожаловать в VPN бот! Используйте меню ниже для навигации.') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="setting_help_message" class="form-label">Сообщение помощи</label>
+                        <textarea class="form-control" id="setting_help_message" name="setting_help_message" rows="3">{{ settings.get('help_message', 'Этот бот позволяет приобрести доступ к VPN сервису. Используйте кнопки меню для навигации.') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="setting_payment_confirmation_message" class="form-label">Сообщение подтверждения оплаты</label>
+                        <textarea class="form-control" id="setting_payment_confirmation_message" name="setting_payment_confirmation_message" rows="3">{{ settings.get('payment_confirmation_message', 'Пожалуйста, отправьте скриншот или квитанцию об оплате. Администратор проверит оплату и активирует ваш доступ.') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="setting_order_completed_message" class="form-label">Сообщение завершения заказа</label>
+                        <textarea class="form-control" id="setting_order_completed_message" name="setting_order_completed_message" rows="3">{{ settings.get('order_completed_message', 'Ваш заказ выполнен! Ваша VPN конфигурация готова к использованию. Нажмите "Мои конфигурации", чтобы получить доступ.') }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Настройки X-UI сервера</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="setting_x_ui_url" class="form-label">URL X-UI панели</label>
+                        <input type="url" class="form-control" id="setting_x_ui_url" name="setting_x_ui_url" value="{{ settings.get('x_ui_url', '') }}" placeholder="https://your-server.com:54321">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="setting_x_ui_username" class="form-label">Имя пользователя X-UI</label>
+                        <input type="text" class="form-control" id="setting_x_ui_username" name="setting_x_ui_username" value="{{ settings.get('x_ui_username', '') }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="setting_x_ui_password" class="form-label">Пароль X-UI</label>
+                        <input type="password" class="form-control" id="setting_x_ui_password" name="setting_x_ui_password" value="{{ settings.get('x_ui_password', '') }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-primary" onclick="testXUIConnection()">Проверить подключение</button>
+                    </div>
+                    
+                    <div id="xuiConnectionResult"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Общие настройки</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="setting_server_address" class="form-label">Адрес VPN сервера</label>
+                        <input type="text" class="form-control" id="setting_server_address" name="setting_server_address" value="{{ settings.get('server_address', '') }}" placeholder="vpn.example.com">
+                        <div class="form-text">Используется при генерации конфигураций, если не указан в X-UI</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="setting_auto_activate_configs" name="setting_auto_activate_configs" {% if settings.get('auto_activate_configs') == 'true' %}checked{% endif %}>
+                        <label class="form-check-label" for="setting_auto_activate_configs">Автоматически активировать конфигурации при подтверждении заказа</label>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Сохранить настройки</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Функция для проверки токена бота
+    function testBotToken() {
+        const token = document.getElementById('setting_telegram_bot_token').value.trim();
+        if (!token) {
+            alert('Введите токен Telegram бота для проверки');
+            return;
+        }
+        
+        // Создаем индикатор загрузки
+        const button = document.querySelector('button[onclick="testBotToken()"]');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Проверка...';
+        button.disabled = true;
+        
+        // Отправляем запрос на сервер для проверки токена
+        fetch('/admin/check_bot_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `token=${encodeURIComponent(token)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Токен действителен!\nИмя бота: ${data.bot_name}`);
+            } else {
+                alert(`Ошибка: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            alert('Произошла ошибка при проверке токена: ' + error);
+        })
+        .finally(() => {
+            // Восстанавливаем кнопку
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+    
+    // Функция для проверки подключения к X-UI
+    function testXUIConnection() {
+        const url = document.getElementById('setting_x_ui_url').value.trim();
+        const username = document.getElementById('setting_x_ui_username').value.trim();
+        const password = document.getElementById('setting_x_ui_password').value.trim();
+        
+        if (!url || !username || !password) {
+            alert('Заполните все поля для проверки подключения к X-UI');
+            return;
+        }
+        
+        // Создаем индикатор загрузки
+        const button = document.querySelector('button[onclick="testXUIConnection()"]');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Проверка...';
+        button.disabled = true;
+        
+        const resultDiv = document.getElementById('xuiConnectionResult');
+        resultDiv.innerHTML = '<div class="alert alert-info">Проверка подключения...</div>';
+        
+        // Отправляем запрос на сервер для проверки подключения
+        fetch('/admin/check_xui_connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `url=${encodeURIComponent(url)}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                resultDiv.innerHTML = `<div class="alert alert-success">
+                    <p>Подключение успешно!</p>
+                    <p>Системная информация:</p>
+                    <ul>
+                        <li>CPU: ${data.stats.cpu}%</li>
+                        <li>Память: ${data.stats.mem}%</li>
+                        <li>Диск: ${data.stats.disk}%</li>
+                        <li>Получено: ${data.stats.network_rx}</li>
+                        <li>Отправлено: ${data.stats.network_tx}</li>
+                    </ul>
+                    <p>Найдено инбаундов: ${data.inbounds_count}</p>
+                </div>`;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-danger">
+                    <p>Ошибка подключения:</p>
+                    <p>${data.error}</p>
+                </div>`;
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = `<div class="alert alert-danger">
+                <p>Произошла ошибка:</p>
+                <p>${error}</p>
+            </div>`;
+        })
+        .finally(() => {
+            // Восстанавливаем кнопку
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+</script>
+{% endblock %}

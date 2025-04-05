@@ -1,0 +1,5 @@
+Add admin panel cache clearing functionality.  This includes new endpoints and UI elements for clearing product and user configuration caches.
+
+Replit-Commit-Author: Agent
+Replit-Commit-Session-Id: 15198957-d824-4cd6-8d15-9db0de71e271
+Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/372dba80-3992-439c-93de-48a81898a505/1bd1f311-b5e2-4f86-92f3-632147fe058f.jpg

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Детали VPN конфигурации{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Детали VPN-конфигурации</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('admin_configs') }}" class="btn btn-sm btn-outline-secondary">
+            <i data-feather="arrow-left"></i> Назад к списку
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Информация о конфигурации</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <th style="width: 30%">ID:</th>
+                        <td>{{ config.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Название:</th>
+                        <td>{{ config.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Тип:</th>
+                        <td>{{ config.config_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Дата создания:</th>
+                        <td>{{ config.created_at.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Действует до:</th>
+                        <td>{{ config.valid_until.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Статус:</th>
+                        <td>
+                            {% if config.is_active %}
+                            <span class="badge bg-success">Активна</span>
+                            {% else %}
+                            <span class="badge bg-danger">Неактивна</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>ID клиента X-UI:</th>
+                        <td>{{ config.x_ui_client_id or 'Не указан' }}</td>
+                    </tr>
+                </table>
+                
+                <div class="mt-3">
+                    <form action="{{ url_for('admin_config_detail', config_id=config.id) }}" method="post" style="display: inline;">
+                        <input type="hidden" name="action" value="toggle_status">
+                        {% if config.is_active %}
+                        <button type="submit" class="btn btn-danger">
+                            <i data-feather="user-x"></i> Деактивировать
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn btn-success">
+                            <i data-feather="user-check"></i> Активировать
+                        </button>
+                        {% endif %}
+                    </form>
+                    
+                    <form action="{{ url_for('admin_config_detail', config_id=config.id) }}" method="post" style="display: inline;">
+                        <input type="hidden" name="action" value="extend">
+                        <input type="hidden" name="days" value="30">
+                        <button type="submit" class="btn btn-primary ms-2">
+                            <i data-feather="clock"></i> Продлить на 30 дней
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Пользователь</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <th style="width: 30%">ID:</th>
+                        <td>{{ config.owner.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Telegram ID:</th>
+                        <td>{{ config.owner.telegram_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Имя:</th>
+                        <td>{{ config.owner.first_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Фамилия:</th>
+                        <td>{{ config.owner.last_name or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Имя пользователя:</th>
+                        <td>@{{ config.owner.username or '-' }}</td>
+                    </tr>
+                </table>
+                
+                <a href="{{ url_for('admin_user_detail', user_id=config.owner.id) }}" class="btn btn-outline-primary mt-3">
+                    <i data-feather="user"></i> Профиль пользователя
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Данные конфигурации</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="configString" value="{{ formatted_config }}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="copyButton" onclick="copyConfig()">
+                            <i data-feather="copy"></i> Копировать
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Для использования в клиентах:</h6>
+                    <div class="d-flex justify-content-center mt-3">
+                        <div id="qrcode"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+    // Функция для копирования строки конфигурации
+    function copyConfig() {
+        const configInput = document.getElementById('configString');
+        configInput.select();
+        document.execCommand('copy');
+        
+        // Изменяем текст на кнопке временно
+        const copyButton = document.getElementById('copyButton');
+        const originalHTML = copyButton.innerHTML;
+        copyButton.innerHTML = '<i data-feather="check"></i> Скопировано!';
+        feather.replace(); // Переинициализация иконок
+        
+        // Возвращаем оригинальный текст через 2 секунды
+        setTimeout(() => {
+            copyButton.innerHTML = originalHTML;
+            feather.replace();
+        }, 2000);
+    }
+    
+    // Генерация QR-кода при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const configString = document.getElementById('configString').value;
+        
+        // Создаем QR-код
+        new QRCode(document.getElementById("qrcode"), {
+            text: configString,
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    });
+</script>
+{% endblock %}

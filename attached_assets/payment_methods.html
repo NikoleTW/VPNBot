@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Способы оплаты{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Способы оплаты</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addPaymentMethodModal">
+            <i data-feather="plus"></i> Добавить способ оплаты
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    {% for method in payment_methods %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ method.name }}</h5>
+                <span class="badge {% if method.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                    {% if method.is_active %}Активен{% else %}Неактивен{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                {% if method.description %}
+                <p><strong>Описание:</strong> {{ method.description }}</p>
+                {% endif %}
+                
+                {% if method.instructions %}
+                <p><strong>Инструкции:</strong> {{ method.instructions }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="editPaymentMethod({{ method.id }})">
+                    <i data-feather="edit-2"></i> Редактировать
+                </button>
+                
+                <form action="{{ url_for('admin_payment_method_delete', method_id=method.id) }}" method="post" style="display: inline;" onsubmit="return confirm('Вы уверены, что хотите удалить этот метод оплаты?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i data-feather="trash-2"></i> Удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <p>Нет доступных способов оплаты. Добавьте новый способ оплаты!</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Модальное окно для добавления способа оплаты -->
+<div class="modal fade" id="addPaymentMethodModal" tabindex="-1" aria-labelledby="addPaymentMethodModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPaymentMethodModalLabel">Добавить способ оплаты</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin_payment_methods') }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="instructions" class="form-label">Инструкции по оплате</label>
+                        <textarea class="form-control" id="instructions" name="instructions" rows="4"></textarea>
+                        <div class="form-text">Укажите подробные инструкции для пользователя (реквизиты, порядок действий и т.д.)</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                        <label class="form-check-label" for="is_active">Активен</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования способа оплаты -->
+<div class="modal fade" id="editPaymentMethodModal" tabindex="-1" aria-labelledby="editPaymentMethodModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPaymentMethodModalLabel">Редактировать способ оплаты</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editPaymentMethodForm" action="" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_instructions" class="form-label">Инструкции по оплате</label>
+                        <textarea class="form-control" id="edit_instructions" name="instructions" rows="4"></textarea>
+                        <div class="form-text">Укажите подробные инструкции для пользователя (реквизиты, порядок действий и т.д.)</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="edit_is_active" name="is_active">
+                        <label class="form-check-label" for="edit_is_active">Активен</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function editPaymentMethod(methodId) {
+        // Получаем данные о способе оплаты по AJAX
+        fetch(`/admin/payment_method/${methodId}/json`)
+            .then(response => response.json())
+            .then(data => {
+                // Заполняем форму данными
+                document.getElementById('edit_name').value = data.name;
+                document.getElementById('edit_description').value = data.description || '';
+                document.getElementById('edit_instructions').value = data.instructions || '';
+                document.getElementById('edit_is_active').checked = data.is_active;
+                
+                // Устанавливаем action формы
+                document.getElementById('editPaymentMethodForm').action = `/admin/payment_method/${methodId}/edit`;
+                
+                // Открываем модальное окно
+                new bootstrap.Modal(document.getElementById('editPaymentMethodModal')).show();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}
